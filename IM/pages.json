@@ -1,0 +1,89 @@
+{
+	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+		{ // 首页
+			"path": "pages/tabbar/index/index",
+			"style": {}
+		}, { // 通讯录
+			"path": "pages/tabbar/mail/mail",
+			"style": {}
+		}, { // 发现
+			"path": "pages/tabbar/find/find",
+			"style": {}
+		}, { // 我的
+			"path": "pages/tabbar/my/my",
+			"style": {}
+		}, { // 聊天页
+			"path": "pages/chat/chat/chat",
+			"style": {}
+		}, { // 视频播放页
+			"path": "pages/chat/video/video",
+			"style": {}
+		}, { // 聊天设置页
+			"path": "pages/chat/chat-set/chat-set",
+			"style": {}
+		}, { // 好友信息页
+			"path": "pages/mail/user-base/user-base",
+			"style": {}
+		}, { // 好友标签页
+			"path": "pages/mail/user-remark-tag/user-remark-tag",
+			"style": {}
+		}, { // 好友标签设置页
+			"path" : "pages/mail/user-tag-set/user-tag-set",
+			"style" : {}
+    } ,{ // 朋友圈和动态权限设置页
+			"path" : "pages/mail/user-monents-auth/user-monents-auth",
+			"style" : {}
+		} ,{
+			"path" : "pages/mail/send-card/send-card",
+			"style" : {}
+		}
+        ,{
+            "path" : "pages/mail/user-report/user-report",
+            "style" : {}
+        }
+    ],
+	"globalStyle": {
+		"navigationStyle": "custom",
+		"navigationBarTextStyle": "black"
+		// "navigationBarTitleText": "仿微信"
+		// "navigationBarBackgroundColor": "#FFC107",
+		// "backgroundColor": "#FFFFFF"
+		// "app-plus": {
+		// 	// "background": "#f00",
+		// 	// "titleNView":false,
+		// 	// "scrollIndicator":"none"
+		// }
+	},
+	"tabBar": {
+		"borderStyle":"black",
+		"backgroundColor":"#F7F7F7",
+		"color":"#000000",
+		"selectedColor":"#08C261",
+		"list": [
+			{
+				"iconPath":"static/tabbar/index.png",
+				"selectedIconPath":"static/tabbar/index-select.png",
+				"text":"首页",
+				"pagePath":"pages/tabbar/index/index"
+			},
+			{
+				"iconPath":"static/tabbar/mail.png",
+				"selectedIconPath":"static/tabbar/mail-select.png",
+				"text":"通讯录",
+				"pagePath":"pages/tabbar/mail/mail"
+			},
+			{
+				"iconPath":"static/tabbar/find.png",
+				"selectedIconPath":"static/tabbar/find-select.png",
+				"text":"发现",
+				"pagePath":"pages/tabbar/find/find"
+			},
+			{
+				"iconPath":"static/tabbar/my.png",
+				"selectedIconPath":"static/tabbar/my-select.png",
+				"text":"我的",
+				"pagePath":"pages/tabbar/my/my"
+			}
+		]
+	}
+}

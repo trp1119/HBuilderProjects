@@ -1,0 +1,69 @@
+<template>
+	<view class="page">
+		<!-- 导航栏 -->
+		<freeNavBar showBack :showRight="true" bg-Color="bg-white" title="用户投诉">
+			<freeMainButton name="投诉" slot="right" @click="submit" />
+		</freeNavBar>
+		
+		<picker mode="selector" :range="range" @change="change">
+			<freeListItem :title="cate ? cate : '请选择分类'" :showLeftIcon="false" showRight></freeListItem>
+		</picker>
+		<textarea
+			class="bg-white p-2 font-md"
+			placeholder="请填写投诉内容..."
+			v-model="content"
+		/>
+	</view>
+</template>
+
+<script>
+	import freeNavBar from '@/components/free-ui/free-nav-bar.vue'
+	import freeMainButton from '@/components/free-ui/free-main-button.vue'
+	import freeListItem from '@/components/free-ui/free-list-item.vue'
+	
+	export default {
+		components: {
+			freeNavBar,
+			freeMainButton,
+			freeListItem
+		},
+		data() {
+			return {
+				range: ['分类一', '分类二', '分类三', '分类四', '分类五'],
+				cate: '',
+				content: ''
+			}
+		},
+		methods: {
+			change (e) {
+				this.cate = this.range[e.detail.value]
+			},
+			submit () {
+				if (!this.cate) {
+					return uni.showToast({
+						title: '请选择分类',
+						icon: 'none'
+					})
+				}
+				if (!this.content) {
+					return uni.showToast({
+						title: '请填写投诉内容',
+						icon: 'none'
+					})
+				}
+				// 请求服务器
+				uni.navigateBack({
+					delta: 1
+				})
+				uni.showToast({
+					title: '投诉成功',
+					icon: 'none'
+				})
+			}
+		}
+	}
+</script>
+
+<style>
+
+</style>

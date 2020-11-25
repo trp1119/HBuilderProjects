@@ -1,0 +1,183 @@
+<template>
+	<view>
+		<!-- 导航栏 -->
+		<freeNavBar title="仿微信" />
+		<!-- 通讯录列表 -->
+		<scroll-view
+			:style="`height: ${scrollHeight}px;`"
+			scroll-y="true"
+			:scroll-into-view="scrollInto"
+		>
+			<freeListItem
+				v-for="(item, index) in topList"
+				:key="index"
+				:cover="item.cover"
+				:title="item.title"
+			/>
+			<view
+				v-for="(item, index) in list"
+				:key="index"
+				:id="`item-${item.letter}`"
+			>
+				<view
+					class="py-2 px-3 border-bottom bg-light"
+					v-if="item.data.length"
+				>
+					<text class="font-md text-dark">{{item.letter}}</text>
+				</view>
+				<freeListItem
+					v-for="(item2, index2) in item.data"
+					:key="index2"
+					:title="item2"
+					cover="/static/images/mail/friend.png"
+				/>
+			</view>
+		</scroll-view>
+		<!-- 侧边导航条 -->
+		<view
+			class="position-fixed right-0 bottom-0 bg-light flex flex-column"
+			style="width: 50rpx;"
+			:style="`top: ${top}px;`"
+			@touchstart="touchstart"
+			@touchmove="touchmove"
+			@touchend="touchend"
+		>
+			<view
+				class="flex-1 flex justify-center align-center"
+				v-for="(item, index) in list"
+				:key="index"
+			>
+				<text class="font-sm text-muted">{{item.letter}}</text>
+			</view>
+		</view>
+		<!-- 字幕显示 -->
+		<view
+			class="position-fixed rounded-circle bg-light border flex justify-center align-center"
+			style="width: 150rpx; height: 150rpx; left: 300rpx;"
+			:style="`top: ${modalTop}px;`"
+			v-if="currentLetter"
+		>
+			<text class="font-lg">{{currentLetter}}</text>
+		</view>
+		
+	</view>
+</template>
+
+<script>
+	import freeNavBar from '@/components/free-ui/free-nav-bar.vue'
+	import freeListItem from '@/components/free-ui/free-list-item.vue'
+	
+	export default {
+		components: {
+			freeNavBar,
+			freeListItem
+		},
+		data() {
+			return {
+				topList: [
+					{
+						cover: '/static/images/mail/friend.png',
+						title: '新的朋友',
+						event: ''
+					},
+					{
+						cover: '/static/images/mail/group.png',
+						title: '群聊',
+						event: ''
+					},
+					{
+						cover: '/static/images/mail/tag.png',
+						title: '标签',
+						event: ''
+					}
+				],
+				list: [
+					{
+						letter: 'A',
+						data: [
+							'阿苏',
+							'阿苏',
+							'阿苏',
+							'阿苏',
+							'阿苏'
+						]
+					},
+					{
+						letter: 'B',
+						data: [
+							'B阿苏',
+							'B阿苏',
+							'B阿苏',
+							'B阿苏',
+							'B阿苏'
+						]
+					},
+					{
+						letter: 'C',
+						data: []
+					},
+					{
+						letter: 'D',
+						data: [
+							'D阿苏',
+							'D阿苏',
+							'D阿苏',
+							'D阿苏',
+							'D阿苏'
+						]
+					}
+				],
+				top: 0,
+				scrollHeight: 0,
+				scrollInto: '',
+				currentLetter: ''
+			}
+		},
+		onLoad () {
+			let res = uni.getSystemInfoSync()
+			this.top = res.statusBarHeight + uni.upx2px(90)
+			this.scrollHeight = res.windowHeight - this.top
+		},
+		computed: {
+			modalTop () {
+				return (this.scrollHeight - uni.upx2px(150)) / 2
+			},
+			// 每个索引的高度
+			itemHeight () {
+				const count = this.list.length
+				if (!count) return 0
+				return this.scrollHeight / this.list.length
+			}
+		},
+		methods: {
+			touchstart (e) {
+				this.changeScrollInto(e)
+			},
+			touchmove (e) {
+				this.changeScrollInto(e)
+			},
+			touchend () {
+				setTimeout(() => {
+					this.currentLetter = ''
+				}, 300)
+			},
+			// 联动
+			changeScrollInto (e) {
+				let Y = e.touches[0].pageY
+				// #ifdef MP
+				Y = Y - this.top
+				// #endif
+				let index = Math.floor(Y / this.itemHeight)
+				let item = this.list[index]
+				if (item) {
+					this.scrollInto = `item-${item.letter}`
+					this.currentLetter = item.letter
+				}
+			}
+		}
+	}
+</script>
+
+<style>
+
+</style>

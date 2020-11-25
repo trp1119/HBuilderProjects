@@ -1,0 +1,58 @@
+<template>
+	<view class="position-relative">
+		<video
+			:style="videoStyle"
+			:src="url"
+			autoplay
+			controls
+			show-center-play-btn
+			@ended="back"
+		></video>
+		<view
+			class="position-absolute flex align-center justify-center rounded"
+			style="top: 50rpx; left: 30rpx; background-color: rgba(255, 255, 255, 0.3);"
+			@click="back"
+		>
+			<text class="iconfont text-white font-sm mx-2 my-2">&#xe620;</text>
+		</view>
+	</view>
+</template>
+
+<script>
+	export default {
+		data () {
+			return {
+				url: '',
+				windowWidth: 500,
+				windowHeight: 500
+			}
+		},
+		computed: {
+			videoStyle () {
+				const windowWidth = uni.getSystemInfoSync().windowWidth
+				const windowHeight = uni.getSystemInfoSync().windowHeight
+				return `width: ${windowWidth}px; height: ${windowHeight}px;`
+			}
+		},
+		onLoad(e) {
+			if (!e.url) {
+				return uni.showToast({
+					title: '非法视频',
+					icon: 'none'
+				})
+			}
+			this.url = e.url
+		},
+		methods: {
+			back () {
+				uni.navigateBack({
+					delta: 1
+				})
+			}
+		}
+	}
+</script>
+
+<style>
+
+</style>

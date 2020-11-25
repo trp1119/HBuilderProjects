@@ -1,0 +1,218 @@
+<template>
+	<view>
+		<!-- 导航栏 -->
+		<freeNavBar showBack :showRight="true" bg-Color="bg-white" title="选择">
+			<freeMainButton
+				:name="muliSelect ? `发送(${selectCount})` : '多选'"
+				slot="right"
+				@click="handleNavBarBtn"
+			/>
+		</freeNavBar>
+		<!-- 搜索框 -->
+		<view
+			class="p-3 bg-light position-fixed left-0 right-0"
+			:style="`top: ${top}px;`"
+		>
+			<input
+				class="bg-white rounded"
+				style="height: 80rpx;"
+				placeholder-class="text-center"
+				type="text"
+				placeholder="搜索"
+				v-model="keyword"
+			>
+		</view>
+		<!-- 联系人列表 -->
+		<freeListItem
+			style="margin-top: 140rpx"
+			title="更多联系人"
+			:showLeftIcon="false"
+			:border="false"
+		/>
+		<view class="px-2 py-1 bg-light">
+			<text class="font-sm text-muted">{{keyword ? '搜索结果' : '最近联系人'}}</text>
+		</view>
+		<freeListItem
+			v-for="(item, index) in allList"
+			:key="index"
+			:title="item.username"
+			:cover="item.avatar"
+			showRight
+			:showRightIcon="false"
+			@click="selsctItem(item)"
+		>
+			<view
+				v-if="muliSelect"
+				slot="right"
+				class="border rounded-circle flex justify-center align-center"
+				style="width: 40rpx; height: 40rpx;"
+			>
+				<view
+					v-if="item.checked"
+					class="main-bg-color rounded-circle"
+					style="width: 30rpx; height: 30rpx;"
+				></view>
+			</view>
+		</freeListItem>
+		
+		<view
+			class="flex align-center justify-center"
+			style="height: 100rpx;"
+			v-if="keyword && searchList.length === 0"
+		>
+			<text class="font text-light-muted">暂无搜索结果</text>
+		</view>
+		
+		<!-- 弹出层 -->
+		<freeConfirm title="发送给" ref="confirm">
+			<scroll-view scroll-x="true" :show-scrollbar="false" class="flex">
+				<view
+					class="mr-1"
+					v-for="(item, index) in 10"
+					:key="index"
+				>
+					<freeAvatar src="/static/images/mail/friend.png" size="70" />
+				</view>
+			</scroll-view>
+			<view class="my-3 bg-light rounded p-2">
+				<text class="font text-light-muted">[个人名片]昵称</text>
+			</view>
+			<input
+				class="border-bottom font-md"
+				style="height: 60rpx;"
+				type="text"
+				placeholder="给朋友留言"
+			>
+		</freeConfirm>
+
+	</view>
+</template>
+
+<script>
+	import freeNavBar from '@/components/free-ui/free-nav-bar.vue'
+	import freeMainButton from '@/components/free-ui/free-main-button.vue'
+	import freeListItem from '@/components/free-ui/free-list-item.vue'
+	import freeConfirm from '@/components/free-ui/free-confirm.vue'
+	import freeAvatar from '@/components/free-ui/free-avatar.vue'
+	
+	export default {
+		components: {
+			freeNavBar,
+			freeMainButton,
+			freeListItem,
+			freeConfirm,
+			freeAvatar
+		},
+		data() {
+			return {
+				keyword: '',
+				muliSelect: false,
+				top: 0,
+				list: [
+					{
+						username: '昵称1',
+						avatar: '/static/images/mail/friend.png',
+						checked: false
+					}, {
+						username: '昵称2',
+						avatar: '/static/images/mail/friend.png',
+						checked: false
+					}, {
+						username: '昵称3',
+						avatar: '/static/images/mail/friend.png',
+						checked: false
+					}, {
+						username: '昵称4',
+						avatar: '/static/images/mail/friend.png',
+						checked: false
+					}, {
+						username: '昵称5',
+						avatar: '/static/images/mail/friend.png',
+						checked: false
+					}, {
+						username: '昵称6',
+						avatar: '/static/images/mail/friend.png',
+						checked: false
+					}, {
+						username: '昵称7',
+						avatar: '/static/images/mail/friend.png',
+						checked: false
+					}, {
+						username: '昵称8',
+						avatar: '/static/images/mail/friend.png',
+						checked: false
+					}, {
+						username: '昵称9',
+						avatar: '/static/images/mail/friend.png',
+						checked: false
+					}, {
+						username: '昵称10',
+						avatar: '/static/images/mail/friend.png',
+						checked: false
+					}, {
+						username: '昵称11',
+						avatar: '/static/images/mail/friend.png',
+						checked: false
+					}, {
+						username: '昵称12',
+						avatar: '/static/images/mail/friend.png',
+						checked: false
+					}
+				]
+			}
+		},
+		onLoad () {
+			let res = uni.getSystemInfoSync()
+			this.top = res.statusBarHeight + uni.upx2px(90)
+		},
+		computed: {
+			// 最终列表
+			allList () {
+				return this.keyword ? this.searchList : this.list
+			},
+			// 搜索结果列表
+			searchList () {
+				if (!this.keyword) return []
+				return this.list.filter(item => {
+					return item.username.indexOf(this.keyword) !== -1
+				})
+			},
+			// 选中列表
+			selectList () {
+				return this.list.filter(item => item.checked)
+			},
+			// 选中数量
+			selectCount () {
+				return this.selectList.length
+			}
+		},
+		methods: {
+			// 点击导航栏按钮事件
+			handleNavBarBtn () {
+				if (!this.muliSelect) return this.muliSelect = true
+			},
+			// 选中/取消选中 | 发送
+			selsctItem (item) {
+				// 选中/取消选中
+				if (this.muliSelect) {
+					if (!item.checked && this.selectCount === 9) { // 已选择
+						// 选中 限制选中数量
+						return uni.showToast({
+							title: "最多选择9个好友",
+							icon: 'none'
+						})
+					}
+					item.checked = !item.checked
+				}
+				// 发送
+				this.$refs.confirm.show(close => {
+					close()
+				})
+			}
+		}
+	}
+</script>
+
+<style>
+
+</style>

@@ -1,0 +1,233 @@
+<template>
+	<view>
+		<!-- 导航栏 -->
+		<freeNavBar title="仿微信" noreadnum="10" />
+		<!-- 置顶列表 -->
+		<block v-for="(item, index) in list" :key="index">
+			<freeMediaList v-if="item.istop" :item="item" :index="index" @long="long" />
+		</block>
+		<!-- 非置顶列表 -->
+		<block v-for="(item, index) in list" :key="index">
+			<freeMediaList v-if="!item.istop" :item="item" :index="index" @long="long" />
+		</block>
+		<!-- 弹出层 -->
+		<freePopup
+			ref="extend"
+			bodyWidth="240"
+			:bodyHeight="getMenusHeight"
+		>
+			<view
+				class="flex flex-column"
+				style="width: 240rpx"
+				:style="getMenusStyle"
+			>
+				<view
+					class="flex-1 flex align-center"
+					hover-class="bg-light"
+					v-for="(item, index) in menus"
+					:key="index"
+					@click="clickEvent(item.event)"
+				>
+					<text class="font-md pl-3">{{item.name}}</text>
+				</view>
+			</view>
+		</freePopup>
+	</view>
+</template>
+
+<script>
+	import freeNavBar from '@/components/free-ui/free-nav-bar.vue'
+	import freeMediaList from '@/components/free-ui/free-media-list.vue'
+	import freePopup from '@/components/free-ui/free-popup.vue'
+
+	export default {
+		components: {
+			freeNavBar,
+			freeMediaList,
+			freePopup
+		},
+		data() {
+			return {
+				propIndex: -1,
+				list: [
+					{
+						avatar: '/static/images/userpic.png',
+						nickname: '测试昵称1',
+						update_time: 1591933382,
+						data: '测试文本内容',
+						noreadnum: 1,
+						istop: false
+					},
+					{
+						avatar: '/static/images/userpic.png',
+						nickname: '测试昵称2',
+						update_time: 1591760582,
+						data: '测试文本内容',
+						noreadnum: 10,
+						istop: false
+					},
+					{
+						avatar: '/static/images/userpic.png',
+						nickname: '测试昵称3',
+						update_time: 1589082182,
+						data: '测试文本内容',
+						noreadnum: 100,
+						istop: false
+					},
+					{
+						avatar: '/static/images/userpic.png',
+						nickname: '测试昵称4',
+						update_time: 1560138182,
+						data: '测试文本内容',
+						noreadnum: 0,
+						istop: false
+					},
+					{
+						avatar: '/static/images/userpic.png',
+						nickname: '测试昵称5',
+						update_time: 1560138182,
+						data: '测试文本内容',
+						noreadnum: 0,
+						istop: true
+					},
+					{
+						avatar: '/static/images/userpic.png',
+						nickname: '测试昵称6',
+						update_time: 1560138182,
+						data: '测试文本内容',
+						noreadnum: 0,
+						istop: false
+					},
+					{
+						avatar: '/static/images/userpic.png',
+						nickname: '测试昵称7',
+						update_time: 1560138182,
+						data: '测试文本内容',
+						noreadnum: 0,
+						istop: false
+					},
+					{
+						avatar: '/static/images/userpic.png',
+						nickname: '测试昵称8',
+						update_time: 1560138182,
+						data: '测试文本内容',
+						noreadnum: 0,
+						istop: false
+					},
+					{
+						avatar: '/static/images/userpic.png',
+						nickname: '测试昵称9',
+						update_time: 1560138182,
+						data: '测试文本内容',
+						noreadnum: 0,
+						istop: false
+					},
+					{
+						avatar: '/static/images/userpic.png',
+						nickname: '测试昵称10',
+						update_time: 1560138182,
+						data: '测试文本内容',
+						noreadnum: 0,
+						istop: false
+					},
+					{
+						avatar: '/static/images/userpic.png',
+						nickname: '测试昵称11',
+						update_time: 1560138182,
+						data: '测试文本内容',
+						noreadnum: 0,
+						istop: false
+					},
+					{
+						avatar: '/static/images/userpic.png',
+						nickname: '测试昵称12',
+						update_time: 1560138182,
+						data: '测试文本内容',
+						noreadnum: 0,
+						istop: false
+					},
+					{
+						avatar: '/static/images/userpic.png',
+						nickname: '测试昵称13',
+						update_time: 1560138182,
+						data: '测试文本内容',
+						noreadnum: 0,
+						istop: false
+					},
+					{
+						avatar: '/static/images/userpic.png',
+						nickname: '测试昵称14',
+						update_time: 1560138182,
+						data: '测试文本内容',
+						noreadnum: 0,
+						istop: false
+					},
+					{
+						avatar: '/static/images/userpic.png',
+						nickname: '测试昵称15',
+						update_time: 1560138182,
+						data: '测试文本内容',
+						noreadnum: 0,
+						istop: false
+					}
+				],
+				menus: [
+					{
+						name: '设为置顶',
+						event: 'setTop'
+					},
+					{
+						name: '删除该聊天',
+						event: 'delChat'
+					}
+				]
+			}
+		},
+		computed: {
+			// 动态获取菜单高度
+			getMenusHeight () {
+				const H = 100
+				return this.menus.length * H
+			},
+			// 获取菜单样式
+			getMenusStyle () {
+				return `height: ${this.getMenusHeight}rpx;`
+			}
+		},
+		methods: {
+			long ({x, y, index}) {
+				// 初始化索引
+				this.propIndex = index
+				// 判断之前是否处于置顶状态
+				const item = this.list[this.propIndex]
+				this.menus[0].name = item.istop ? '取消置顶' : '设为置顶'
+				this.$refs.extend.show(x, y)
+			},
+			// 分发菜单事件
+			clickEvent (event) {
+				switch (event) {
+					case 'setTop':
+						this.setTop()
+						break;
+					case 'delChat': // 删除当前会话
+						this.delChat()
+						break;
+				}
+				this.$refs.extend.hide()
+			},
+			// 置顶/取消置顶会话
+			setTop () {
+				const item = this.list[this.propIndex]
+				item.istop = !item.istop
+			},
+			// 删除当前会话
+			delChat () {
+				this.list.splice(this.propIndex, 1)
+			}
+		}
+	}
+</script>
+
+<style>
+
+</style>

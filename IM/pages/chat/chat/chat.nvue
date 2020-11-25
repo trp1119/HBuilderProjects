@@ -1,0 +1,722 @@
+<template>
+	<view>
+		<!-- 导航栏 -->
+		<freeNavBar showBack title="张三" noreadnum="10">
+			<freeIconButton
+				slot="right"
+				:icon="'\ue6fd'"
+				@click="openChatSet"
+			/>
+		</freeNavBar>
+		<!-- 聊天内容区域 -->
+		<scroll-view
+			class="position-fixed left-0 right-0 bg-light px-3"
+			style="bottom: 105rpx;"
+			:style="chatBodyBottom"
+			:show-scrollbar="false"
+			scroll-y
+		>
+			<!-- 聊天信息列表组件 -->
+			<block v-for="(item, index) in list" :key="index">
+				<freeChatItem
+					ref="chatItem"
+					:item="item"
+					:index="index"
+					:pretime="index > 0 ? list[index-1].create_time : 0"
+					@long="long"
+					@preview="preview"
+				/>
+			</block>
+		</scroll-view>
+		<!-- 点击蒙版 -->
+		<!-- #ifdef APP-PLUS-NVUE -->
+		<view
+			class="position-fixed top-0 right-0 left-0"
+			v-if="keyboardHeight"
+			:style="'bottom:' + maskBottom + 'px;'"
+			@click="clickMask"
+		></view>
+		<!-- #endif -->
+		<!-- 底部输入框 -->
+		<view
+			class="position-fixed left-0 right-0 border-top flex align-center"
+			style="background-color: #F7F7F6; height: 105rpx;"
+			:style="'bottom:' + keyboardHeight + 'px;'"
+		>
+			<freeIconButton
+				:icon="mode === 'audio' ? '\ue607': '\ue606'"
+				@click="changeTextOrVoice"
+			/>
+				<view class="flex-1">
+					<view
+						v-if="mode === 'audio'"
+						class="rounded flex justify-center align-center"
+						:class="isRecording ? 'bg-hover-light' : 'bg-white'"
+						style="height: 80rpx;"
+						@touchstart="voiceTouchStart"
+						@touchend="voiceTouchEnd"
+						@touchcancel="voiceTouchCancel"
+						@touchmove="voiceTouchMove"
+					>
+						<text class="font">{{isRecording ? '松开结束' : '按住说话'}}</text>
+					</view>
+					<textarea
+						v-else
+						class="bg-white rounded p-2 font-md"
+						style="height: 75rpx;"
+						fixed
+						:adjust-position="false"
+						v-model="text"
+						@focus="mode = 'text'"
+					/>
+				</view>
+			<!-- 表情 -->
+			<freeIconButton :icon="'\ue605'" @click="openEmoticonOrAction('emoticon')" />
+			<!-- 扩展菜单 -->
+			<freeIconButton v-if="!text" :icon="'\ue603'" @click="openEmoticonOrAction('action')" />
+			<!-- 发送按钮 -->
+			<freeMainButton
+				v-else
+				@click="send('text')"
+				name="发送"
+			/>
+		</view>
+		
+		<!-- 扩展菜单弹出层 -->
+		<free-popup
+			ref="action"
+			bottom
+			transformOrigin="center bottom"
+			:mask="false"
+			@hide="keyboardHeight = 0"
+		>
+			<view class="border-top border-light-secondary bg-light" style="height: 580rpx;">
+				<swiper :indicator-dots="true" :current="current" style="height: 510px;">
+					<swiper-item
+						class="row"
+						v-for="(item, index) in emoticonOrActionList"
+						:key="index"
+					>
+						<view
+							class="col-3 flex flex-column align-center justify-center"
+							style="height: 255rpx;"
+							v-for="(item2, index2) in item"
+							:key="index2"
+							@click="actionEvent(item2)"
+						>
+							<image
+								:src="item2.icon"
+								mode="widthFix"
+								style="width: 100rpx; height: 100rpx;"
+							></image>
+							<text class="font-sm text-light-muted mt-2">{{item2.name}}</text>
+						</view>
+					</swiper-item>
+				</swiper>
+			</view>
+		</free-popup>
+		<!-- 消息操作弹出层 -->
+		<freePopup
+			ref="extend"
+			bodyWidth="240"
+			:bodyHeight="getMenusHeight"
+			:tabbarHeight="105"
+		>
+			<view
+				class="flex flex-column"
+				style="width: 240rpx"
+				:style="getMenusStyle"
+			>
+				<view
+					class="flex-1 flex align-center"
+					hover-class="bg-light"
+					v-for="(item, index) in menusList"
+					:key="index"
+					@click="clickEvent(item.event)"
+				>
+					<text class="font-md pl-3">{{item.name}}</text>
+				</view>
+			</view>
+		</freePopup>
+		<!-- 录音提示 -->
+		<view
+			class="position-fixed top-0 left-0 right-0 flex justify-center align-center"
+			style="bottom: 105rpx;"
+			v-if="isRecording"
+		>
+			<view
+				class="rounded flex flex-column align-center justify-center"
+				style="width: 360rpx; height: 360rpx; background-color: rgba(0, 0, 0, 0.5);"
+			>
+				<image
+					src="/static/audio/recording.gif"
+					style="width: 150rpx; height: 150rpx;"
+				></image>
+				<text class="font text-white mt-3">{{unRecord ? '松开手指，取消发送' : '手指上划，取消发送'}}</text>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	import freeNavBar from '@/components/free-ui/free-nav-bar.vue'
+	import freeIconButton from '@/components/free-ui/free-icon-button.vue'
+	import freeChatItem from '@/components/free-ui/free-chat-item.vue'
+	import freePopup from '@/components/free-ui/free-popup.vue'
+	import freeMainButton from '@/components/free-ui/free-main-button.vue'
+	
+	import { mapState } from 'vuex'
+	
+	// #ifdef APP-PLUS-NVUE
+	const dom = weex.requireModule('dom')
+	// #endif
+	const RECORD = uni.getRecorderManager()
+	
+	export default {
+		components: {
+			freeNavBar,
+			freeIconButton,
+			freeChatItem,
+			freePopup,
+			freeMainButton
+		},
+		data() {
+			return {
+				propIndex: -1,
+				statusBarHeight: 0,
+				navBarHeight: 0,
+				keyboardHeight: 0, // 键盘高度
+				mode: 'audio', // text 文字 emoticon 表情 action 操作 audio 音频
+				list: [
+					{
+						avatar: '/static/images/mail/friend.png',
+						user_id: 2,
+						nickname: '昵称',
+						type: 'text', // text image audio video file share
+						data: '你好你好你好你好你好你好你好你好你好',
+						create_time: 1591846735,
+						isremove: true
+					},
+					{
+						avatar: '/static/images/mail/friend.png',
+						user_id: 1,
+						nickname: '昵称',
+						type: 'text', // text image audio video file share
+						data: '123你好你好你好你好你好你好你好你好你好',
+						create_time: 1591933135,
+						isremove: false
+					},
+					{
+						avatar: '/static/images/mail/friend.png',
+						user_id: 1,
+						nickname: '昵称',
+						type: 'text', // text image audio video file share
+						data: '123你好你好你好你好你好你好你好你好你好',
+						create_time: 1591943456,
+						isremove: false
+					},
+					{
+						avatar: '/static/images/mail/friend.png',
+						user_id: 2,
+						nickname: '昵称',
+						type: 'text', // text image audio video file share
+						data: '123你好你好你好你好你好你好你好你好你好',
+						create_time: 1591943508,
+						isremove: false
+					},
+					{
+						avatar: '/static/images/mail/friend.png',
+						user_id: 2,
+						nickname: '昵称',
+						type: 'text', // text image audio video file share
+						data: '123你好你好你好你好你好你好你好你好你好',
+						create_time: 1591943508,
+						isremove: false
+					},
+					{
+						avatar: '/static/images/mail/friend.png',
+						user_id: 2,
+						nickname: '昵称',
+						type: 'text', // text image audio video file share
+						data: '123你好你好你好你好你好你好你好你好你好',
+						create_time: 1591943508,
+						isremove: false
+					},
+					{
+						avatar: '/static/images/mail/friend.png',
+						user_id: 2,
+						nickname: '昵称',
+						type: 'text', // text image audio video file share
+						data: '123你好你好你好你好你好你好你好你好你好',
+						create_time: 1591943508,
+						isremove: false
+					},
+					{
+						avatar: '/static/images/mail/friend.png',
+						user_id: 2,
+						nickname: '昵称',
+						type: 'text', // text image audio video file share
+						data: '123你好你好你好你好你好你好你好你好你好',
+						create_time: 1591943508,
+						isremove: false
+					},
+					{
+						avatar: '/static/images/mail/friend.png',
+						user_id: 2,
+						nickname: '昵称',
+						type: 'text', // text image audio video file share
+						data: '123你好你好你好你好你好你好你好你好你好',
+						create_time: 1591943508,
+						isremove: false
+					},
+					{
+						avatar: '/static/images/mail/friend.png',
+						user_id: 1,
+						nickname: '昵称',
+						type: 'audio', // text image audio video file share
+						data: '/static/audio/1.mp3',
+						options: {
+							time: 10
+						},
+						create_time: 1591943508,
+						isremove: false
+					},
+					{
+						avatar: '/static/images/mail/friend.png',
+						user_id: 2,
+						nickname: '昵称',
+						type: 'audio', // text image audio video file share
+						data: '/static/audio/2.mp3',
+						options: {
+							time: 40
+						},
+						create_time: 1591943508,
+						isremove: false
+					},
+					{
+						avatar: '/static/images/mail/friend.png',
+						user_id: 1,
+						nickname: '昵称',
+						type: 'audio', // text image audio video file share
+						data: '/static/audio/3.mp3',
+						options: {
+							time: 60
+						},
+						create_time: 1591943508,
+						isremove: false
+					},
+					{
+						avatar: '/static/images/mail/friend.png',
+						user_id: 1,
+						nickname: '昵称',
+						type: 'video', // text image audio video file share
+						data: '/static/video/demo.mp4',
+						options: {
+							poster: '/static/video/demo.png'
+						},
+						create_time: 1591943508,
+						isremove: false
+					}
+				],
+				menus: [
+					{
+						name: '复制',
+						event: ''
+					},
+					{
+						name: '发送给朋友',
+						event: ''
+					},
+					{
+						name: '收藏',
+						event: ''
+					},
+					{
+						name: '删除',
+						event: 'delChatItem'
+					},
+					{
+						name: '多选',
+						event: ''
+					},
+					{
+						name: '撤回',
+						event: 'removeChatItem'
+					}
+				],
+				// 扩展菜单
+				actionList: [
+					[
+						{
+							name: '相册',
+							icon: '/static/images/extends/pic.png',
+							event: 'uploadImage'
+						},
+						{
+							name: '拍摄',
+							icon: '/static/images/extends/video.png',
+							event: 'uploadVideo'
+						},
+						{
+							name: '收藏',
+							icon: '/static/images/extends/shoucang.png',
+							event: ''
+						},
+						{
+							name: '名片',
+							icon: '/static/images/extends/man.png',
+							event: ''
+						},
+						{
+							name: '语音通话',
+							icon: '/static/images/extends/phone.png',
+							event: ''
+						},
+						{
+							name: '位置',
+							icon: '/static/images/extends/path.png',
+							event: ''
+						}
+					],
+					[
+						{
+							name: '相册',
+							icon: '/static/images/extends/pic.png',
+							event: ''
+						},
+						{
+							name: '拍摄',
+							icon: '/static/images/extends/video.png',
+							event: ''
+						},
+						{
+							name: '收藏',
+							icon: '/static/images/extends/shoucang.png',
+							event: ''
+						},
+						{
+							name: '名片',
+							icon: '/static/images/extends/man.png',
+							event: ''
+						},
+						{
+							name: '语音通话',
+							icon: '/static/images/extends/phone.png',
+							event: ''
+						},
+						{
+							name: '位置',
+							icon: '/static/images/extends/path.png',
+							event: ''
+						}
+					]
+				],
+				emoticonList: [], // 表情
+				text: '', // 输入文字
+				current: 0, // 滑块index
+				isShowExtend: false,
+				isRecording: false, // 音频录制状态
+				recordingStartY: 0,
+				unRecord: false, // 取消录音
+				recordTime: 0, // 录音时长
+				RECORDTIMER: null // 录音时长记录定时器
+			}
+		},
+		// watch: {
+		// 	mode (newValue, oldValue) {
+		// 		// if (newValue !== 'action') this.$refs.action.hide()
+		// 		// if (newValue !== 'text') uni.hideKeyboard()
+		// 	}
+		// },
+		computed: {
+			// ...mapState({
+			// 	RECORD: state => state.audio.RECORD
+			// }),
+			// 动态获取菜单高度
+			getMenusHeight () {
+				const H = 100
+				return this.menus.length * H
+			},
+			// 获取菜单样式
+			getMenusStyle () {
+				return `height: ${this.getMenusHeight}rpx;`
+			},
+			// 蒙版位置
+			maskBottom () {
+				return this.keyboardHeight + uni.upx2px(105)
+			},
+			// 判断是否操作本人信息
+			isdoSelf () {
+				// 获取本人 id
+				const id = 1
+				const user_id = this.propIndex > -1 ? this.list[this.propIndex].user_id : 0
+				return user_id === id
+			},
+			// 获取操作菜单
+			menusList () {
+				return this.menus.filter(item => {
+					if (item.name === '撤回' && !this.isdoSelf) {
+						return false
+					} else {
+						return true
+					}
+				})
+			},
+			// 聊天区域 bottom
+			chatBodyBottom () {
+				return `top: ${this.navBarHeight}px; bottom: ${uni.upx2px(105) + this.keyboardHeight}px;`
+			},
+			// 获取表情/操作列表
+			emoticonOrActionList () {
+				return (this.mode === 'emoticon' || this.mode === 'action') ? this[`${this.mode}List`] : []
+			},
+			// 所有信息的图片地址
+			imageLsit () {
+				let arr = []
+				this.list.forEach(item => {
+					if (item.type === 'image') {
+						arr.push(item.data)
+					}
+				})
+				return arr
+			}
+		},
+		// onReady() {
+		// 	this.pageToBottom()
+		// },
+		created () {
+			this.__init()
+		},
+		mounted () {
+			// #ifdef APP-PLUS-NVUE
+			this.statusBarHeight = plus.navigator.getStatusbarHeight()
+			// #endif
+			this.navBarHeight = this.statusBarHeight + uni.upx2px(90)
+			// 页面滚动到底部
+			setTimeout(() => {
+				this.pageToBottom()
+			}, 100)
+			// 监听键盘高度变化
+			uni.onKeyboardHeightChange(res => {
+				if (res.height > 0) this.isShowExtend = false
+				if (!this.isShowExtend) this.keyboardHeight = res.height
+				if (!this.isShowExtend && res.height === 0) this.$refs.action.hide()
+				// if (this.mode !== 'emoticon' && this.mode !== 'action') this.keyboardHeight = res.height
+				// if (this.mode !== 'emoticon' && this.mode !== 'action' && res.height === 0) {
+				// 	this.$refs.action.hide()
+				// }
+				if (this.keyboardHeight) this.pageToBottom()
+				this.isShowExtend = false
+				// this.mode = ''
+			})
+			// 监听录音开始
+			RECORD.onStart(() => {
+				this.recordTime = 0
+				this.RECORDTIMER = setInterval(() => {
+					this.recordTime++
+				}, 1000)
+			})
+			// 监听录音结束
+			RECORD.onStop((e) => {
+				if (this.RECORDTIMER) { // 清除定时器
+					clearInterval(this.RECORDTIMER)
+					this.RECORDTIMER = null
+				}
+				if (!this.unRecord) {
+					this.send('audio', e.tempFilePath, { // 发送语音
+						time: this.recordTime
+					})
+				}
+			})
+		},
+		methods: {
+			__init () {
+				const total = 9
+				const page = Math.ceil(total/8)
+				let arr = []
+				for (let i = 0; i < page; i++) {
+					let start = i * 8
+					arr[i] = []
+					for (let j = 0; j < 8; j++) {
+						if (start + j >= total) continue
+						arr[i].push({
+							name: `表情${start + j}`,
+							icon: `/static/images/emoticon/5497/${start + j}.gif`,
+							event: 'sendEmoticon'
+						})
+					}
+				}
+				
+				this.emoticonList = arr
+			},
+			// 回到底部
+			pageToBottom () {
+				// #ifdef APP-PLUS-NVUE
+				const chatItem =  this.$refs.chatItem
+				const lastIndex = chatItem.length > 0 ? chatItem.length - 1 : 0
+				if (chatItem[lastIndex]) dom.scrollToElement(chatItem[lastIndex], {})
+				// #endif
+			},
+			// 长按消息气泡
+			long ({x, y, index}) {
+				// 初始化索引
+				this.propIndex = index
+				// // 判断之前是否处于置顶状态
+				// const item = this.list[this.propIndex]
+				// this.menus[0].name = item.istop ? '取消置顶' : '设为置顶'
+				this.$refs.extend.show(x, y)
+			},
+			// 分发菜单事件
+			clickEvent (event) {
+				switch (event) {
+					case 'removeChatItem': // 撤回消息
+						this.removeChatItem()
+						break;
+					case 'delChatItem': // 删除消息
+						this.delChatItem()
+						break;
+				}
+				this.$refs.extend.hide()
+			},
+			// 撤回消息
+			removeChatItem () {
+				if (this.propIndex > -1) this.list[this.propIndex].isremove = true
+			},
+			// 删除消息
+			delChatItem () {
+				this.list.splice(this.propIndex, 1)
+			},
+			// 发送消息
+			send (type, data = '', options = {}) {
+				const obj = {
+							avatar: '/static/images/mail/friend.png',
+							user_id: 1,
+							nickname: '昵称1',
+							type: type,
+							data: data,
+							options: options,
+							create_time: (new Date()).getTime(),
+							isremove: false
+						}
+				switch (type) {
+					case 'text':
+						obj.data = this.text
+						break
+				}
+				this.list.push(obj)
+				// 发送文字成功，清空输入框
+				if (type === 'text') this.text = ''
+				// 滚动到底部
+				setTimeout(() => {
+					this.pageToBottom()
+				}, 100)
+				// this.$nextTick(() => {
+				// 	this.pageToBottom()
+				// })
+			},
+			// 点击聊天区域
+			clickMask () {
+				this.$refs.action.hide()
+				uni.hideKeyboard()
+			},
+			// 打开扩展菜单
+			openEmoticonOrAction (mode) {
+				this.isShowExtend = true
+				this.current = 0 // 无效
+				this.mode = mode
+				this.$refs.action.show()
+				uni.hideKeyboard()
+				this.keyboardHeight = uni.upx2px(580)
+				this.$nextTick(() => {
+					this.pageToBottom()
+				})
+			},
+			// 扩展菜单事件
+			actionEvent (e) {
+				switch (e.event) {
+					case 'uploadImage': // 选择相册
+						uni.chooseImage({
+							success: res => {
+								this.$nextTick(() => {
+									// 关闭弹出层
+									this.$refs.action.hide()
+									uni.hideKeyboard()
+								})
+								// 发送到服务端
+								// 渲染到页面
+								res.tempFilePaths.forEach(item => {
+									this.send('image', item)
+								})
+							}
+						})
+						break
+					case 'sendEmoticon': // 发送表情包
+						this.send('emoticon', e.icon)
+						break
+					case 'uploadVideo': // 发送短视频
+						uni.chooseVideo({
+							maxDuration: 10,
+							success: res => {
+								this.$nextTick(() => {
+									// 关闭弹出层
+									this.$refs.action.hide()
+									uni.hideKeyboard()
+								})
+								// 发送到服务端（获取视频封面，返回 url）
+								// 渲染页面
+								this.send('video', res.tempFilePath)
+								// 修改本地发送状态
+							}
+						})
+						break
+				}
+			},
+			// 预览图片
+			preview (url) {
+				uni.previewImage({
+					current: url,
+					urls: this.imageLsit
+				})
+			},
+			// 切换文本输入和音频录制
+			changeTextOrVoice () {
+				this.mode = this.mode === 'audio' ? 'text' : 'audio'
+				this.$refs.action.hide()
+				uni.hideKeyboard()
+			},
+			// 录音开始
+			voiceTouchStart (e) {
+				// 初始化
+				this.isRecording = true
+				this.unRecord = false
+				this.recordingStartY = e.touches[0].screenY
+				RECORD.start({ // 开始录音
+					format: 'mp3'
+				})
+			},
+			// 录音结束
+			voiceTouchEnd () {
+				this.isRecording = false
+				RECORD.stop() // 停止录音
+			},
+			// 录音被打断
+			voiceTouchCancel () {
+				this.isRecording = false
+				RECORD.stop() // 停止录音
+			},
+			voiceTouchMove (e) {
+				const Y = Math.abs(e.touches[0].screenY - this.recordingStartY)
+				this.unRecord = Y >= 80
+			},
+			// 打开聊天信息设置
+			openChatSet () {
+				uni.navigateTo({
+					url: '../chat-set/chat-set'
+				})
+			}
+		}
+	}
+</script>
+
+<style>
+</style>

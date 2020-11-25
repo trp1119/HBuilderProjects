@@ -1,0 +1,66 @@
+<template>
+	<view class="page">
+		<!-- 导航栏 -->
+		<freeNavBar title="发现" />
+		<!-- 发现列表 -->
+		<freeListItem title="朋友圈" showRight>
+			<text class="iconfont font-lg py-1" slot="icon">&#xe667;</text>
+			<view slot="right" class="position-relative p-1">
+				<freeAvatar
+					src="/static/images/mail/friend.png"
+					size="55"
+				></freeAvatar>
+				<text
+					class="rounded-circle bg-danger position-absolute"
+					style="width: 20rpx; height: 20rpx; top: 0; right: 0;"
+				></text>
+			</view>
+		</freeListItem>
+		<freeDivider></freeDivider>
+		<freeListItem title="扫一扫" showRight>
+			<text class="iconfont font-lg py-1" slot="icon">&#xe667;</text>
+		</freeListItem>
+		<freeListItem title="摇一摇" showRight>
+			<text class="iconfont font-lg py-1" slot="icon">&#xe667;</text>
+		</freeListItem>
+		<freeDivider></freeDivider>
+		<freeListItem title="看一看" showRight>
+			<text class="iconfont font-lg py-1" slot="icon">&#xe667;</text>
+		</freeListItem>
+		<freeListItem title="搜一搜" showRight>
+			<text class="iconfont font-lg py-1" slot="icon">&#xe667;</text>
+		</freeListItem>
+		<freeDivider></freeDivider>
+		<freeListItem title="购物" showRight>
+			<text class="iconfont font-lg py-1" slot="icon">&#xe667;</text>
+		</freeListItem>
+	</view>
+</template>
+
+<script>
+	import freeNavBar from '@/components/free-ui/free-nav-bar.vue'
+	import freeListItem from '@/components/free-ui/free-list-item.vue'
+	import freeAvatar from '@/components/free-ui/free-avatar.vue'
+	import freeDivider from '@/components/free-ui/free-divider.vue'
+	
+	export default {
+		components: {
+			freeNavBar,
+			freeListItem,
+			freeAvatar,
+			freeDivider
+		},
+		data() {
+			return {
+				
+			}
+		},
+		methods: {
+			
+		}
+	}
+</script>
+
+<style>
+
+</style>

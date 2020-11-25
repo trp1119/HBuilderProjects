@@ -1,0 +1,83 @@
+<template>
+	<view class="page">
+		<!-- 导航栏 -->
+		<freeNavBar showBack :showRight="true" bg-Color="bg-white" title="设置备注和标签">
+			<freeMainButton name="完成" slot="right" @click="submit" />
+		</freeNavBar>
+		
+		<view class="flex flex-column">
+			<text class="font-sm text-secondary px-3 py-2">备注名</text>
+			<input
+				class="border bg-white font-md px-3"
+				style="height: 100rpx;"
+				type="text"
+				placeholder="请填写备注名"
+				v-model="nickname"
+			>
+		</view>
+		
+		<view class="flex flex-column">
+			<text class="font-sm text-secondary px-3 py-2">标签</text>
+			<view
+				class="border bg-white px-3 flex flex-wrap align-center pt-3 pb-2"
+			>
+				<view
+					class="border border-main rounded-circle px-2 py-1 mr-1 mb-1"
+					v-for="(item, index) in tagList"
+					:key="index"
+					@click="openTagSet"
+				>
+					<text class="font main-text-color">{{item}}</text>
+				</view>
+			</view>
+		</view>
+		
+	</view>
+</template>
+
+<script>
+	import freeNavBar from '@/components/free-ui/free-nav-bar.vue'
+	import freeMainButton from '@/components/free-ui/free-main-button.vue'
+	
+	export default {
+		components: {
+			freeNavBar,
+			freeMainButton
+		},
+		data () {
+			return {
+				nickname: '',
+				tagList: ['123', '456']
+			}
+		},
+		onLoad () {
+			uni.$on('updateTag', e => {
+				this.tagList = e
+			})
+		},
+		beforeDestroy () {
+			uni.$off('updateTag')
+		},
+		methods: {
+			openTagSet () {
+				uni.navigateTo({
+					url: `../user-tag-set/user-tag-set?detail=${JSON.stringify(this.tagList)}`
+				})
+			},
+			// 完成
+			submit () {
+				uni.$emit('saveRemarkTag', {
+					nickname: this.nickname,
+					tagList: this.tagList
+				})
+				uni.navigateBack({
+					delta: 1
+				})
+			}
+		}
+	}
+</script>
+
+<style>
+
+</style>
